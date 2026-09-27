@@ -1,0 +1,10 @@
+{
+  "name": "qvac-conversation-starters",
+  "version": "1.0.0",
+  "description": "Conversation Starters: pick the situation and how deep you want to go, and an on-device AI deals a deck of good questions to get people talking. Powered by the QVAC SDK.",
+  "type": "module",
+  "main": "server.js",
+  "scripts": { "start": "node server.js" },
+  "dependencies": { "@qvac/sdk": "^0.19.0" },
+  "license": "MIT"
+}
