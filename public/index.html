@@ -1,0 +1,95 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1">
+<title>Conversation Starters</title>
+<style>
+  :root { --bg: #fdf3e7; --ink: #2d1f12; --muted: #7d6b58; --line: #eedcc5; --card: #fff; --coral: #ff6b6b; --teal: #12b886; --navy: #1c2541; }
+  * { box-sizing: border-box; }
+  body { margin: 0; background: var(--bg); color: var(--ink); font: 16px/1.5 system-ui, "Segoe UI", sans-serif; }
+  main { max-width: 760px; margin: 0 auto; padding: 26px 16px 56px; }
+  h1 { font: 900 36px/1.05 system-ui, sans-serif; margin: 0; text-align: center; } h1 span { color: var(--coral); } .sub { color: var(--muted); margin: 6px 0 8px; text-align: center; }
+  #status { font-size: 13px; color: var(--muted); margin: 0 0 12px; text-align: center; } #status.ok { color: #2b8a3e; } #status.err { color: #c92a2a; }
+  .panel { background: var(--card); border: 1px solid var(--line); border-radius: 16px; padding: 16px 18px; margin-bottom: 16px; }
+  .chips { display: flex; gap: 6px; flex-wrap: wrap; } .chips button { background: #fff; color: var(--ink); border: 1px solid var(--line); border-radius: 99px; padding: 5px 12px; font-size: 14px; font-weight: 600; } .chips button.on { background: var(--navy); color: #fff; border-color: var(--navy); }
+  input { font: inherit; padding: 9px 12px; border: 2px solid var(--line); border-radius: 10px; background: #fff; color: var(--ink); min-width: 0; flex: 1 1 220px; }
+  input:focus-visible, button:focus-visible { outline: 3px solid #ffa8a8; outline-offset: 2px; }
+  .depth { display: flex; gap: 6px; } .depth button { flex: 1; background: #fff; color: var(--ink); border: 2px solid var(--line); } .depth button.on { border-color: var(--coral); background: #fff5f5; }
+  button { font: inherit; font-weight: 700; padding: 10px 18px; border: 0; border-radius: 12px; background: var(--coral); color: #fff; cursor: pointer; }
+  button.ghost { background: #fff; color: var(--ink); border: 1px solid var(--line); padding: 8px 14px; font-size: 14px; } button.busy { opacity: .55; cursor: progress; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; align-items: center; margin-top: 10px; } .row.center { justify-content: center; } .note { color: var(--muted); font-size: 14px; min-height: 20px; margin: 8px 0 0; text-align: center; }
+  .deck { position: relative; margin: 18px auto; max-width: 560px; } .card { background: var(--navy); color: #fff; border-radius: 22px; min-height: 260px; padding: 34px 30px; display: flex; flex-direction: column; justify-content: center; text-align: center; box-shadow: 8px 8px 0 #ffd8a8, 16px 16px 0 #ffc078; }
+  .card .q { font: 700 26px/1.4 Georgia, serif; } .card .count { font-size: 13px; letter-spacing: .1em; color: #adb5bd; margin-bottom: 14px; text-transform: uppercase; }
+  .fav { display: flex; gap: 8px; align-items: center; padding: 8px 0; border-top: 1px solid var(--line); } .fav span { flex: 1; } .empty { color: var(--muted); } .hidden { display: none; }
+</style>
+</head>
+<body>
+<main>
+  <h1>Conversation <span>Starters</span></h1>
+  <p class="sub">Pick where you are and how deep to go. Get a deck of good questions to get people talking.</p>
+  <p id="status">Checking the AI question dealer...</p>
+  <section class="panel">
+    <div class="chips" id="sits" role="group" aria-label="Situation"></div>
+    <div class="row"><input id="custom" placeholder="Or type your own situation, e.g. waiting for the bus with a neighbor" maxlength="100" autocomplete="off" aria-label="Your own situation"></div>
+    <div class="row depth" id="depth" role="group" aria-label="Depth"><button data-d="light" class="on">🎈 Light</button><button data-d="medium">☕ Medium</button><button data-d="deep">🌊 Deep</button></div>
+    <div class="row center"><button id="deal">Deal the cards</button></div>
+    <p class="note" id="note"></p>
+  </section>
+  <section class="deck hidden" id="deckBox" aria-live="polite">
+    <div class="card"><div class="count" id="count"></div><div class="q" id="q"></div></div>
+    <div class="row center"><button class="ghost" id="prev" aria-label="Previous question">← Back</button><button id="next">Next question →</button><button class="ghost" id="shuffle">🔀 Shuffle</button></div>
+    <div class="row center"><button class="ghost" id="star">☆ Save</button><button class="ghost" id="copy">Copy</button><button class="ghost" id="more">Deal more</button></div>
+  </section>
+  <section class="panel"><strong>⭐ Saved questions</strong><div id="favs"></div></section>
+</main>
+
+<script>
+const $ = (id) => document.getElementById(id);
+const SITS = ["family dinner", "new classmate", "new coworker", "road trip", "old friend catch-up", "visiting grandparents", "party with strangers", "first day of a club"];
+// Built-in questions for when the AI isn't ready yet
+const BANK = { light: ["What's the best thing you've eaten this week?", "If you could have any animal as a pet, what would it be?", "What show or game are you into right now?", "What would your perfect weekend look like?", "Which superpower would be most useful on a Monday?", "What's a song you never get tired of?", "If you could visit any country tomorrow, where would you go?", "What's the funniest thing that happened to you recently?", "Beach holiday or mountain cabin, and why?", "What's something small that always makes you happy?"],
+  medium: ["What's something you learned recently that surprised you?", "Who's someone who made a big difference in your life?", "What's a goal you're working on right now?", "What's the best advice anyone ever gave you?", "What's a hobby you'd love to try one day?", "What's a place that feels like home to you?", "What's something you're proud of that most people don't know?", "What was your favorite age so far, and why?", "What's a skill you wish they taught in school?", "What's a tradition you love?"],
+  deep: ["What's a moment that changed how you see the world?", "What do you want people to remember about you?", "When do you feel most like yourself?", "What's something you believed as a kid that you see differently now?", "What's a challenge that made you stronger?", "What does a good life mean to you?", "Who do you want to thank but never have?", "What are you looking forward to most in the next few years?", "What's a question you wish more people asked you?", "What makes a friendship last?"] };
+let sit = SITS[0], depth = "light", deck = [], idx = 0, busy = false, ai = { ready: false, message: "Loading...", percent: null, error: null };
+let favs = []; try { favs = JSON.parse(localStorage.getItem("starterFavs") || "[]"); } catch {}
+const persist = () => { try { localStorage.setItem("starterFavs", JSON.stringify(favs)); } catch {} };
+SITS.forEach((s) => { const b = document.createElement("button"); b.textContent = s; b.className = s === sit ? "on" : ""; b.addEventListener("click", () => { sit = s; $("custom").value = ""; document.querySelectorAll("#sits button").forEach((x) => x.classList.toggle("on", x === b)); }); $("sits").append(b); });
+$("custom").addEventListener("input", () => document.querySelectorAll("#sits button").forEach((x) => x.classList.toggle("on", !$("custom").value.trim() && x.textContent === sit)));
+$("depth").addEventListener("click", (e) => { const b = e.target.closest("button"); if (!b) return; depth = b.dataset.d; document.querySelectorAll("#depth button").forEach((x) => x.classList.toggle("on", x === b)); });
+
+function show() { $("deckBox").classList.remove("hidden"); $("count").textContent = "Question " + (idx + 1) + " of " + deck.length; $("q").textContent = deck[idx]; $("star").textContent = favs.includes(deck[idx]) ? "\u2b50 Saved" : "\u2606 Save"; $("prev").disabled = idx === 0; }
+async function deal(more) {
+  if (busy) return; const situation = $("custom").value.trim() || sit;
+  let got, src;
+  if (!ai.ready) { const pool = BANK[depth].filter((q) => !deck.includes(q)); got = (pool.length ? pool : BANK[depth]).sort(() => Math.random() - 0.5); src = "built-in"; $("note").textContent = (ai.error ? "The AI isn't available" : "The AI is still loading" + (ai.percent != null ? " (" + ai.percent + "%)" : "")) + ", so these are built-in questions. Try again soon for questions made for \u201c" + situation + "\u201d."; }
+  else { busy = true; ["deal", "more"].forEach((id) => $(id).classList.add("busy")); $("note").textContent = "Shuffling questions for \u201c" + situation + "\u201d...";
+    try { const res = await fetch("/api/deal", { method: "POST", headers: { "Content-Type": "application/json" }, body: JSON.stringify({ situation, depth, avoid: more ? deck : [] }) }); got = await res.json(); if (!res.ok) throw new Error(got.error); $("note").textContent = "Questions by the on-device AI. Take turns answering!"; }
+    catch (err) { got = [...BANK[depth]].sort(() => Math.random() - 0.5); $("note").textContent = "The AI had a problem (" + err.message + "), so these are built-in questions."; }
+    busy = false; ["deal", "more"].forEach((id) => $(id).classList.remove("busy")); }
+  if (more) { const start = deck.length; deck = [...deck, ...got.filter((q) => !deck.includes(q))]; idx = Math.min(start, deck.length - 1); } else { deck = got; idx = 0; }
+  show(); $("next").focus();
+}
+$("deal").addEventListener("click", () => deal(false)); $("more").addEventListener("click", () => deal(true)); $("custom").addEventListener("keydown", (e) => { if (e.key === "Enter") deal(false); });
+$("next").addEventListener("click", () => { if (idx < deck.length - 1) { idx++; show(); } else $("note").textContent = "That's the whole deck! Press Deal more for new questions."; });
+$("prev").addEventListener("click", () => { if (idx > 0) { idx--; show(); } });
+$("shuffle").addEventListener("click", () => { deck.sort(() => Math.random() - 0.5); idx = 0; show(); });
+document.addEventListener("keydown", (e) => { if ($("deckBox").classList.contains("hidden") || e.target.tagName === "INPUT") return; if (e.key === "ArrowRight") $("next").click(); if (e.key === "ArrowLeft") $("prev").click(); });
+$("star").addEventListener("click", () => { const q = deck[idx]; favs = favs.includes(q) ? favs.filter((x) => x !== q) : [...favs, q]; persist(); drawFavs(); show(); });
+$("copy").addEventListener("click", async () => { try { await navigator.clipboard.writeText(deck[idx]); $("copy").textContent = "Copied!"; } catch { $("copy").textContent = "Press Ctrl+C"; } setTimeout(() => ($("copy").textContent = "Copy"), 1200); });
+function drawFavs() { const box = $("favs"); box.innerHTML = favs.length ? "" : '<p class="empty">Save your favorite questions for next time.</p>';
+  favs.forEach((f) => { const r = document.createElement("div"); r.className = "fav"; const s = document.createElement("span"); s.textContent = f; const x = document.createElement("button"); x.className = "ghost"; x.textContent = "Remove"; x.addEventListener("click", () => { favs = favs.filter((k) => k !== f); persist(); drawFavs(); if (deck.length) show(); }); r.append(s, x); box.append(r); }); }
+
+async function checkStatus() {
+  try { ai = await (await fetch("/api/status")).json();
+    if (ai.error) return setStatus("AI error: " + ai.error + ". Built-in questions still work.", "err");
+    if (ai.ready) return setStatus("AI question dealer ready. It runs on your device. Tip: use \u2190 \u2192 keys.", "ok");
+    setStatus(ai.message + (ai.percent != null ? " " + ai.percent + "%" : "") + " Built-in questions work meanwhile.");
+  } catch { ai = { ready: false, error: "the server can't be reached" }; setStatus("Can't reach the server. Open http://localhost:3089 and make sure npm start is running.", "err"); return; }
+  setTimeout(checkStatus, 1500);
+}
+function setStatus(t, c = "") { $("status").textContent = t; $("status").className = c; }
+drawFavs(); checkStatus();
+</script>
+</body>
+</html>
